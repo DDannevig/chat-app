@@ -10,10 +10,20 @@ module Api
           f.write(Rails.application.routes.url_helpers.user_confirmation_url(confirmation_token: user.confirmation_token, host: 'localhost:3000'))
          end
       
-        render json: user
+        render json: user, serializer: UserSerializer
+      end
+
+      # POST api/v1/user/:user_id/validation
+      def validation
+        user.confirm
+        render json: user, serializer: UserSerializer
       end
     
       private
+
+      def user
+        @user ||= User.find(params[:user_id])
+      end
 
       def create_params
         params.require(%i[email password nickname])
