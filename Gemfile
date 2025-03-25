@@ -46,6 +46,7 @@ gem "bootsnap", require: false
 
 # For user authentication
 gem 'devise'
+gem 'jwt'
 
 gem 'active_model_serializers'
 
