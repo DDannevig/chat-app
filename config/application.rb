@@ -25,5 +25,12 @@ module ChatApi
     # config.eager_load_paths << Rails.root.join("extras")
     
     config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
+
+    # Allow only https requests through websockets
+    # config.action_cable.allowed_request_origins = [%r{https?://\S+}]
+    # 
+    # Action Cable
+    config.action_cable.mount_path = '/cable'
+    config.action_cable.disable_request_forgery_protection = true # API mode
   end
 end
