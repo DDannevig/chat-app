@@ -24,7 +24,7 @@ module Chat
     end
 
     def action_cable_message
-      { user: user.nickname, message: message, key: channel.key }
+      { user: user.nickname, message: message, key: channel.key, created_at: created_at }
     end 
   end
 end
