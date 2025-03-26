@@ -19,7 +19,7 @@ module ApplicationCable
       when 'create_public_channel'
         create_public_channel(parsed_data['key'])
       when 'send_public_message'
-        retrieve_public_channels
+        send_public_message(parsed_data['key'], parsed_data['message'])
       when 'send_private_message'
         retrieve_public_channels
       else
@@ -53,10 +53,25 @@ module ApplicationCable
     end
 
     def create_public_channel(key)
-      new_channel = Chat::Channel.new(key: key)
-      return transmit({ error: "Invalid key: #{key}" }) unless new_channel.save
+      channel = Chat::Channel.new(key: key)
+      return transmit({ error: "Invalid key: #{key}" }) unless channel.save
 
-      transmit({ channel_id: new_channel.id })
+      transmit({ channel_id: channel.id })
+    end
+
+    def send_public_message(key, message)
+      channel = Chat::Channel.find_by(key: key)
+      return transmit({ error: "Invalid key: #{key}" }) if channel.blank?
+      return transmit({ error: "Unsubscribed user" }) unless subscribed_user?(key)
+
+      Chat::Message.create(channel: channel, message: message, user: current_user)
+    end
+
+    def subscribed_user?(key)
+      self.subscriptions.identifiers.any? do |unparsed_identifier|
+        identifier = JSON.parse(unparsed_identifier)
+        identifier['channel_name'] == key
+      end
     end
   end
 end
