@@ -9,15 +9,15 @@ module ApplicationCable
 
     def receive(data)
       parsed_data = JSON.parse(data)
+      return super if parsed_data['command'].present?
+
       case parsed_data['action']
       when 'retrieve_public_channels'
         retrieve_public_channels
       when 'retrieve_channel_users'
         retrieve_public_channels
       when 'create_public_channel'
-        retrieve_public_channels
-      when 'subscribe_public_channel'
-        retrieve_public_channels
+        create_public_channel(parsed_data['key'])
       when 'send_public_message'
         retrieve_public_channels
       when 'send_private_message'
@@ -47,13 +47,16 @@ module ApplicationCable
     end
 
     def retrieve_public_channels
-      public_groups = [
-        { id: 1, name: "General", members: 120 },
-        { id: 2, name: "Tech Talk", members: 75 },
-        { id: 3, name: "Gaming", members: 50 }
-      ]
+      public_channels = Chat::Channel.public_channels.map { |channel| { id: channel.id, key: channel.key } }
 
-      transmit({ action: "chat_groups_response", groups: public_groups })
+      transmit({ public_channels: public_channels })
+    end
+
+    def create_public_channel(key)
+      new_channel = Chat::Channel.new(key: key)
+      return transmit({ error: "Invalid key: #{key}" }) unless new_channel.save
+
+      transmit({ channel_id: new_channel.id })
     end
   end
 end

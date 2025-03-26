@@ -32,7 +32,7 @@ module Api
       end
 
       def user_by_email
-        @user_by_email ||= User.find_by!(email: params.require(:email))
+        @user_by_email ||= User.confirmed.find_by!(email: params.require(:email))
       end
 
       def token_payload
