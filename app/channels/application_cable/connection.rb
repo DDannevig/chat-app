@@ -14,8 +14,7 @@ module ApplicationCable
       when 'retrieve_public_channels'
         retrieve_public_channels
       when 'retrieve_channel_users'
-        # FALTA ESTO
-        retrieve_public_channels
+        retrieve_channel_users(parsed_data['key'])
       when 'create_public_channel'
         create_public_channel(parsed_data['key'])
       when 'send_public_message'
@@ -79,6 +78,12 @@ module ApplicationCable
       return transmit({ error: "Invalid user_id: #{key}" }) if channel.blank?
 
       Chat::Message.create(channel: channel, user: current_user, message: message)
+    end
+
+    def retrieve_channel_users(key)
+      users = ActionCable.server.pubsub.redis_connection_for_subscriptions.smembers("active_on_channel_#{key}")
+      
+      transmit({ users: users })
     end
   end
 end
