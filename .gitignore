@@ -1,2 +1,4 @@
+.DS_Store
+
 cat server/.gitignore >> .gitignore
 cat client/.gitignore >> .gitignore
