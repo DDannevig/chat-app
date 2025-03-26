@@ -4,7 +4,6 @@ module ApplicationCable
 
     def connect
       self.current_user = find_verified_user
-      # por default deberia subscribirlo al del usuario
     end
 
     def receive(data)
@@ -15,13 +14,14 @@ module ApplicationCable
       when 'retrieve_public_channels'
         retrieve_public_channels
       when 'retrieve_channel_users'
+        # FALTA ESTO
         retrieve_public_channels
       when 'create_public_channel'
         create_public_channel(parsed_data['key'])
       when 'send_public_message'
         send_public_message(parsed_data['key'], parsed_data['message'])
       when 'send_private_message'
-        retrieve_public_channels
+        send_private_message(parsed_data['key'], parsed_data['message'])
       else
         transmit({ error: "Unknown action: #{parsed_data['action']}" })
       end
@@ -60,7 +60,7 @@ module ApplicationCable
     end
 
     def send_public_message(key, message)
-      channel = Chat::Channel.find_by(key: key)
+      channel = Chat::Channel.public_channels.find_by(key: key)
       return transmit({ error: "Invalid key: #{key}" }) if channel.blank?
       return transmit({ error: "Unsubscribed user" }) unless subscribed_user?(key)
 
@@ -72,6 +72,13 @@ module ApplicationCable
         identifier = JSON.parse(unparsed_identifier)
         identifier['channel_name'] == key
       end
+    end
+
+    def send_private_message(user_id, message)
+      channel = Chat::Channel.private_channels.find_by(key: "user_id_#{user_id}")
+      return transmit({ error: "Invalid user_id: #{key}" }) if channel.blank?
+
+      Chat::Message.create(channel: channel, user: current_user, message: message)
     end
   end
 end
