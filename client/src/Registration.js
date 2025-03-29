@@ -1,15 +1,15 @@
-// src/Register.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();  // Using useNavigate for programmatic navigation
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,17 +32,18 @@ const Register = () => {
       // Make the API call using axios
       const response = await axios.post('http://localhost:3001/api/v1/users', {
         email,
+        nickname,
         password,
       });
 
       console.log('Registration successful:', response.data);
 
-      navigate('/login'); // Redirect to login page
+      navigate('/login');
     } catch (error) {
       console.error('Error:', error.response || error);
       setError(error.response?.data?.message || 'Registration failed! Please try again.');
     } finally {
-      setIsLoading(false);  // Reset loading state
+      setIsLoading(false);
     }
   };
 
@@ -57,6 +58,16 @@ const Register = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
+            required
+          />
+        </div>
+        <div>
+          <label>Nickname</label>
+          <input
+            type="string"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="Enter your nickname"
             required
           />
         </div>

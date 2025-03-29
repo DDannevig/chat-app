@@ -7,7 +7,7 @@ module Api
       def create
         user = User.create!(create_params)
         File.open("#{user.email}.txt", 'w') do |f|
-          f.write(Rails.application.routes.url_helpers.user_confirmation_url(confirmation_token: user.confirmation_token, host: 'localhost:3000'))
+          f.write(Rails.application.routes.url_helpers.user_confirmation_url(confirmation_token: user.confirmation_token, host: 'localhost:3001'))
          end
       
         render json: user, serializer: UserSerializer
