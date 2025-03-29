@@ -7,6 +7,7 @@ class User < ApplicationRecord
   scope :confirmed, -> { where.not(confirmed_at: nil) }
 
   validates :nickname, presence: true
+  validates :nickname, uniqueness: true
 
   after_create :create_private_channel
   after_destroy :destroy_private_channel
