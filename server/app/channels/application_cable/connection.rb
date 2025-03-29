@@ -37,12 +37,18 @@ module ApplicationCable
     end
 
     def decoded_auth_token
-      @decoded_auth_token ||= JWT.decode(authorization_header, Rails.application.secrets.secret_key_base).first
+      @decoded_auth_token ||= decode_token.first
     end
 
-    def authorization_header
-      reject_unauthorized_connection if request.headers['Authorization'].blank?
-      request.headers['Authorization'].split(' ').last
+    def decode_token
+      JWT.decode(authorization_token, Rails.application.secrets.secret_key_base)
+    rescue 
+      reject_unauthorized_connection
+    end
+
+    def authorization_token
+      auth_token = request.headers['Authorization'].presence || request.params['authorization']
+      auth_token.split(' ').last
     end
 
     def retrieve_public_channels
