@@ -7,21 +7,27 @@ const Chat = () => {
   const [username, setUsername] = useState(''); // Username (optional)
   const [socket, setSocket] = useState(null); // WebSocket instance
   const [isConnected, setIsConnected] = useState(false); // Connection status
+  const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(true);
+  const [publicChannels, setPublicChannels] = useState([]);
+  const apiUrl = 'localhost:3001'
+  const webSocketUrl = 'ws://' + apiUrl + '/cable?authorization=' + localStorage.getItem('authToken');
+
+  const togglePublicChannelsDropdown = () => {
+    setPublicChannelsOpen(!isPublicChannelsOpen);
+  };
 
   // Establish WebSocket connection when component mounts
   useEffect(() => {
-    const authToken = localStorage.getItem('authToken');
-    const apiUrl = 'localhost:3001'
-    const webSocketUrl = 'ws://' + apiUrl + '/cable?authorization=' + authToken
-
     // Create a WebSocket connection
     const newSocket = new WebSocket(webSocketUrl);
 
     newSocket.onopen = () => {
       console.log('Connected to Chat API');
       setIsConnected(true);
+      setSocket(newSocket)
 
       newSocket.send(JSON.stringify(subscribePrivateChannel()));
+      newSocket.send(JSON.stringify(retrievePublicChannels()));
     };
 
     newSocket.onclose = () => {
@@ -38,9 +44,14 @@ const Chat = () => {
     // Listen for incoming messages
     newSocket.onmessage = (event) => {
       const incomingMessage = JSON.parse(event.data);
-      console.log(incomingMessage)
+      console.log("incomingMessage: ", incomingMessage)
       if (incomingMessage['type'] == 'message') {
        setMessages((prevMessages) => [...prevMessages, incomingMessage]);
+      }
+      else {
+        if (incomingMessage['type'] == 'info'){
+          setPublicChannels(incomingMessage['public_channels'] || [])
+        }
       }
     };
 
@@ -83,30 +94,73 @@ const Chat = () => {
     };
   };
 
+  const subscribePublicChannel = (channel_key) => {
+    return {
+      command: 'subscribe',
+      identifier: JSON.stringify({
+        channel: 'PublicChannel',
+        channel_name: channel_key
+      })
+    };
+  };
+
+  const retrievePublicChannels = () => {
+    return { action: 'retrieve_public_channels' };
+  };
+
+  const subscribeChannel = (channel_key) => {
+    console.log(channel_key)
+    socket.send(JSON.stringify(subscribePublicChannel(channel_key)));
+
+    alert(`You selected the ${channel_key} channel!`);
+  };
+
   return (
-    <div className="chat-container">
-      <h2>Chat</h2>
-      {!isConnected && <p>Connecting to server...</p>}
-
-      <div className="messages">
-        {messages.map((msg, index) => (
-          <div key={index} className="message">
-            <span className="username">{msg.username}</span>: <span className="content">{msg.content}</span>
-            <span className="timestamp">{new Date(msg.timestamp).toLocaleTimeString()}</span>
-          </div>
-        ))}
+    <div className="chat-overview"> 
+      <div className="channel-finder">
+        <button onClick={togglePublicChannelsDropdown} className="dropdown-button">
+          Select Option
+        </button>
+        {isPublicChannelsOpen && (
+          <ul className="dropdown-menu">
+            {publicChannels.map((channel) => (
+            <li key={channel.key} className="dropdown-item">
+              <span>{channel.key}</span>
+              <button
+                className="channel-button"
+                onClick={() => subscribeChannel(channel.key)}
+              >
+                Join
+              </button>
+            </li>
+          ))}
+          </ul>
+        )}
       </div>
+      <div className="chat-container">
+        <h2>Chat</h2>
+        {!isConnected && <p>Connecting to server...</p>}
 
-      <form onSubmit={sendMessage} className="chat-form">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          required
-        />
-        <button type="submit">Send</button>
-      </form>
+        <div className="messages">
+          {messages.map((msg, index) => (
+            <div key={index} className="message">
+              <span className="username">{msg.username}</span>: <span className="content">{msg.content}</span>
+              <span className="timestamp">{new Date(msg.timestamp).toLocaleTimeString()}</span>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={sendMessage} className="chat-form">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type a message..."
+            required
+          />
+          <button type="submit">Send</button>
+        </form>
+      </div>
     </div>
   );
 };

@@ -54,7 +54,7 @@ module ApplicationCable
     def retrieve_public_channels
       public_channels = Chat::Channel.public_channels.map { |channel| { id: channel.id, key: channel.key } }
 
-      transmit({ public_channels: public_channels })
+      transmit({ type: 'info', public_channels: public_channels })
     end
 
     def create_public_channel(key)
