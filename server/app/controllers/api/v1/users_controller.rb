@@ -52,7 +52,8 @@ module Api
 
       def sessions_response
         { token: JWT.encode(token_payload, Rails.application.secrets.secret_key_base),
-          expiration: token_payload[:expiration] }
+          expiration: token_payload[:expiration],
+          user_id: user_by_email.id }
       end
     end
   end

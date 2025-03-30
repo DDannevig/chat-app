@@ -30,6 +30,7 @@ const Login = () => {
 
       // Optionally: Store the token or user data (e.g., in localStorage or context)
       localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem('userId', response.data.user_id);
 
       // Redirect to dashboard or homepage
       window.location.href = '/chat';
