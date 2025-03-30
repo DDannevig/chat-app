@@ -21,12 +21,7 @@ const Chat = () => {
       console.log('Connected to Chat API');
       setIsConnected(true);
 
-      
-      const user_id = localStorage.getItem('userId')
-      const identifier = { 'channel': 'PrivateChannel', 'channel_name': ('user_id_' + user_id) }
-      const subscribe_private_channel = { 'command': 'subscribe', 'identifier': JSON.stringify(identifier)}
-      console.log(subscribe_private_channel)
-      newSocket.send(JSON.stringify(subscribe_private_channel));
+      newSocket.send(JSON.stringify(subscribePrivateChannel()));
     };
 
     newSocket.onclose = () => {
@@ -76,6 +71,16 @@ const Chat = () => {
     } else {
       console.error('WebSocket connection is not open');
     }
+  };
+
+  const subscribePrivateChannel = () => {
+    return {
+      command: 'subscribe',
+      identifier: JSON.stringify({
+        channel: 'PrivateChannel',
+        channel_name: ('user_id_' + localStorage.getItem('userId'))
+      })
+    };
   };
 
   return (
