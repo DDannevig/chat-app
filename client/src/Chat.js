@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { baseApiUrl } from './ApiClient';
 
 const Chat = () => {
   // State variables
   const [messages, setMessages] = useState([]); // Array to store messages
   const [message, setMessage] = useState(''); // Current message input value
-  const [username, setUsername] = useState(''); // Username (optional)
+  const [username, setUsername] = useState(''); // Username
   const [socket, setSocket] = useState(null); // WebSocket instance
   const [isConnected, setIsConnected] = useState(false); // Connection status
   const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(true);
   const [publicChannels, setPublicChannels] = useState([]);
-  const apiUrl = 'localhost:3001'
-  const webSocketUrl = 'ws://' + apiUrl + '/cable?authorization=' + localStorage.getItem('authToken');
+  const webSocketUrl = 'ws://' + baseApiUrl + '/cable?authorization=' + localStorage.getItem('authToken');
 
   const togglePublicChannelsDropdown = () => {
     setPublicChannelsOpen(!isPublicChannelsOpen);
   };
 
   // Establish WebSocket connection when component mounts
-  useEffect(() => {
+  useEffect(() => { 
     // Create a WebSocket connection
     const newSocket = new WebSocket(webSocketUrl);
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { apiUrl } from './ApiClient'
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,7 +22,7 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/v1/users/sessions', {
+      const response = await axios.post(apiUrl + '/sessions', {
         email,
         password,
       });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import { apiUrl } from './ApiClient';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const Register = () => {
 
     try {
       // Make the API call using axios
-      const response = await axios.post('http://localhost:3001/api/v1/users', {
+      const response = await axios.post(apiUrl, {
         email,
         nickname,
         password,
