@@ -33,7 +33,7 @@ const Login = () => {
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('userId', response.data.user_id);
 
-      // Redirect to dashboard or homepage
+      // Redirect to chat
       window.location.href = '/chat';
 
     } catch (error) {

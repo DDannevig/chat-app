@@ -54,7 +54,7 @@ module ApplicationCable
     def retrieve_public_channels
       public_channels = Chat::Channel.public_channels.map { |channel| { id: channel.id, key: channel.key } }
 
-      transmit({ type: 'info', public_channels: public_channels })
+      transmit({ type: 'public_channels', public_channels: public_channels })
     end
 
     def create_public_channel(key)
@@ -72,6 +72,13 @@ module ApplicationCable
       Chat::Message.create(channel: channel, message: message, user: current_user)
     end
 
+    def send_private_message(user_id, message)
+      channel = Chat::Channel.private_channels.find_by(key: "user_id_#{user_id}")
+      return transmit({ error: "Invalid user_id: #{key}" }) if channel.blank?
+
+      Chat::Message.create(channel: channel, message: message, user: current_user)
+    end
+
     def subscribed_user?(key)
       self.subscriptions.identifiers.any? do |unparsed_identifier|
         identifier = JSON.parse(unparsed_identifier)
@@ -79,17 +86,10 @@ module ApplicationCable
       end
     end
 
-    def send_private_message(user_id, message)
-      channel = Chat::Channel.private_channels.find_by(key: "user_id_#{user_id}")
-      return transmit({ error: "Invalid user_id: #{key}" }) if channel.blank?
-
-      Chat::Message.create(channel: channel, user: current_user, message: message)
-    end
-
     def retrieve_channel_users(key)
       users = ActionCable.server.pubsub.redis_connection_for_subscriptions.smembers("active_on_channel_#{key}")
       
-      transmit({ users: users })
+      transmit({ key: key, users: users })
     end
   end
 end
