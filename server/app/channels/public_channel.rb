@@ -4,7 +4,7 @@ class PublicChannel < ActionCable::Channel::Base
 
     stream_from "public_channel_#{params[:channel_name]}"
     add_active_user_to_channel
-    transmit "Welcome, #{current_user.nickname}!"
+    transmit({ type: 'welcome', message: "Welcome, #{current_user.nickname}!" })
   end
 
   def unsubscribed

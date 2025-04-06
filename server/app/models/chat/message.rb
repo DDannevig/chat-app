@@ -12,15 +12,15 @@ module Chat
     private
 
     def broadcast_message
-      channel.private ? message('private') : message('public')
+      channel.private ? format_message('private') : format_message('public')
     end
 
-    def message(type)
-      ActionCable.server.broadcast("#{type}}_channel_#{channel.key}", action_cable_message(type))
+    def format_message(type)
+      ActionCable.server.broadcast("#{type}_channel_#{channel.key}", action_cable_message)
     end
 
-    def action_cable_message(type)
-      { type: type, user: user.nickname, message: message, key: channel.key, created_at: created_at }
+    def action_cable_message
+      { user: user.nickname, message: message, created_at: created_at, type: 'message' }
     end 
   end
 end

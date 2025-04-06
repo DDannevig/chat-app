@@ -1,63 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { baseApiUrl } from './ApiClient';
+import { webSocketUrl } from './ApiClient';
 
 const Chat = () => {
   // State variables
-  const [messages, setMessages] = useState([]); // Array to store messages
+  const [publicMessages, setPublicMessages] = useState([]); // Array to store messages
+  const [privateMessages, setPrivateMessages] = useState([]); // Array to store messages
   const [message, setMessage] = useState(''); // Current message input value
   const [username, setUsername] = useState(''); // Username
-  const [socket, setSocket] = useState(null); // WebSocket instance
   const [isConnected, setIsConnected] = useState(false); // Connection status
-  const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(true);
+  const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(false);
   const [publicChannels, setPublicChannels] = useState([]);
-  const webSocketUrl = 'ws://' + baseApiUrl + '/cable?authorization=' + localStorage.getItem('authToken');
+  const [currentChannel, setCurrentChannel] = useState('');
+  const [webSocket, _setWebSocket] = useState(new WebSocket(webSocketUrl + localStorage.getItem('authToken')));
 
   const togglePublicChannelsDropdown = () => {
     setPublicChannelsOpen(!isPublicChannelsOpen);
   };
 
-  // Establish WebSocket connection when component mounts
   useEffect(() => { 
-    // Create a WebSocket connection
-    const newSocket = new WebSocket(webSocketUrl);
-
-    newSocket.onopen = () => {
+    webSocket.onopen = () => {
       console.log('Connected to Chat API');
       setIsConnected(true);
-      setSocket(newSocket)
 
-      newSocket.send(JSON.stringify(subscribePrivateChannel()));
-      newSocket.send(JSON.stringify(retrievePublicChannels()));
+      console.log("Subscribing to Private Channel")
+      webSocket.send(JSON.stringify(subscribePrivateChannel()));
+      console.log("Retrieving Public Channels")
+      webSocket.send(JSON.stringify(retrievePublicChannels()));
     };
 
-    newSocket.onclose = () => {
+    webSocket.onclose = () => {
       console.log('Disconnected from Chat API');
       setIsConnected(false);
 
       window.location.href = '/login';
     };
 
-    newSocket.onerror = (error) => {
+    webSocket.onerror = (error) => {
       console.error('WebSocket Error:', error);
     };
 
     // Listen for incoming messages
-    newSocket.onmessage = (event) => {
+    webSocket.onmessage = (event) => {
       const incomingMessage = JSON.parse(event.data);
-      console.log("incomingMessage: ", incomingMessage)
-      if (incomingMessage['type'] == 'message') {
-       setMessages((prevMessages) => [...prevMessages, incomingMessage]);
-      }
-      else {
-        if (incomingMessage['type'] == 'info'){
-          setPublicChannels(incomingMessage['public_channels'] || [])
-        }
+    // Deberia meter un switch case
+    // Si se reciben los grupos publicos -> actualizarlo en el store (solo nombre y id)
+    // Si se recibe un mensaje -> se lo suma en el store
+    // Si recibe los usuarios del canal -> Mostrarlos en una ventanita nueva. OJO que no estoy tan seguro de esto
+      switch(incomingMessage['type']) {
+        case 'ping':
+          break;
+        case 'welcome':
+          break;
+        case 'confirm_subscription':
+          const channelKey = JSON.parse(incomingMessage['identifier'])['channel_name']
+          console.log("Current Channel: ", channelKey)
+          setCurrentChannel(channelKey);
+          break;
+        case 'public_channels':
+          setPublicChannels(incomingMessage['public_channels'] || []);
+          break;
+        default:
+          const identifier = JSON.parse(incomingMessage['identifier'])
+          console.log("DEFAULT")
+          console.log("incomingMessage: ", incomingMessage['message'])
+          switch(identifier['channel']){
+            case 'PrivateChannel':
+              console.log("PrivateChannelPrivateChannelPrivateChannel")
+              console.log("Code how to recieve private messages please")
+              break;
+            case 'PublicChannel':
+              console.log("Got here")
+              console.log("message: ", incomingMessage['message'])
+              switch(incomingMessage['message']['type']) {
+                case 'welcome':
+                  break;
+                case 'message':
+                  setPublicMessages((publicMessages) => [...publicMessages, incomingMessage['message']]);
+                  break;
+              }
+          }
+          break;
       }
     };
 
     // Cleanup function to close WebSocket connection when component unmounts
     return () => {
-      newSocket.close();
+      webSocket.close();
     };
   }, []);
 
@@ -70,15 +98,14 @@ const Chat = () => {
     }
 
     const newMessage = {
-      username,
-      content: message,
-      timestamp: new Date().toISOString(),
+      action: 'send_public_message',
+      key: currentChannel,
+      message,
     };
 
-    // Send the message as JSON via WebSocket
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(newMessage));
-      setMessage(''); // Clear the input field after sending
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+      webSocket.send(JSON.stringify(newMessage));
+      setMessage('');
     } else {
       console.error('WebSocket connection is not open');
     }
@@ -110,10 +137,11 @@ const Chat = () => {
 
   const subscribeChannel = (channel_key) => {
     console.log(channel_key)
-    socket.send(JSON.stringify(subscribePublicChannel(channel_key)));
+    webSocket.send(JSON.stringify(subscribePublicChannel(channel_key)));
 
     alert(`You selected the ${channel_key} channel!`);
   };
+
 
   return (
     <div className="chat-overview"> 
@@ -142,10 +170,10 @@ const Chat = () => {
         {!isConnected && <p>Connecting to server...</p>}
 
         <div className="messages">
-          {messages.map((msg, index) => (
+          {publicMessages.map((msg, index) => (
             <div key={index} className="message">
-              <span className="username">{msg.username}</span>: <span className="content">{msg.content}</span>
-              <span className="timestamp">{new Date(msg.timestamp).toLocaleTimeString()}</span>
+              <span className="username">{msg['user']}</span>: <span className="content">{msg['message']}</span>
+              <span className="timestamp">{new Date(msg['created_at']).toLocaleTimeString()}</span>
             </div>
           ))}
         </div>
