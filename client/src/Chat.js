@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { webSocketUrl } from './ApiClient';
+import wsClient from './wsClient';
 
 const Chat = () => {
   // State variables
@@ -11,36 +12,38 @@ const Chat = () => {
   const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(false);
   const [publicChannels, setPublicChannels] = useState([]);
   const [currentChannel, setCurrentChannel] = useState('');
-  const [webSocket, _setWebSocket] = useState(new WebSocket(webSocketUrl + localStorage.getItem('authToken')));
+  
 
   const togglePublicChannelsDropdown = () => {
     setPublicChannelsOpen(!isPublicChannelsOpen);
   };
 
-  useEffect(() => { 
-    webSocket.onopen = () => {
+  useEffect(() => {
+    console.log('Starting connection');
+    const tokenUrl = webSocketUrl + localStorage.getItem('authToken');
+    wsClient.init(tokenUrl);
+
+    const handleOpen = () => {
       console.log('Connected to Chat API');
       setIsConnected(true);
 
-      console.log("Subscribing to Private Channel")
-      webSocket.send(JSON.stringify(subscribePrivateChannel()));
-      console.log("Retrieving Public Channels")
-      webSocket.send(JSON.stringify(retrievePublicChannels()));
+      console.log('Subscribing to Private Channel');
+      try { wsClient.send(JSON.stringify(subscribePrivateChannel())); } catch (e) {}
+      console.log('Retrieving Public Channels');
+      try { wsClient.send(JSON.stringify(retrievePublicChannels())); } catch (e) {}
     };
 
-    webSocket.onclose = () => {
+    const handleClose = () => {
       console.log('Disconnected from Chat API');
       setIsConnected(false);
-
       window.location.href = '/login';
     };
 
-    webSocket.onerror = (error) => {
+    const handleError = (error) => {
       console.error('WebSocket Error:', error);
     };
 
-    // Listen for incoming messages
-    webSocket.onmessage = (event) => {
+    const handleMessage = (event) => {
       const incomingMessage = JSON.parse(event.data);
     // Deberia meter un switch case
     // Si se reciben los grupos publicos -> actualizarlo en el store (solo nombre y id)
@@ -83,9 +86,18 @@ const Chat = () => {
       }
     };
 
-    // Cleanup function to close WebSocket connection when component unmounts
+    wsClient.addListener('open', handleOpen);
+    wsClient.addListener('close', handleClose);
+    wsClient.addListener('error', handleError);
+    wsClient.addListener('message', handleMessage);
+
+    if (wsClient.readyState() === WebSocket.OPEN) handleOpen();
+
     return () => {
-      webSocket.close();
+      wsClient.removeListener('open', handleOpen);
+      wsClient.removeListener('close', handleClose);
+      wsClient.removeListener('error', handleError);
+      wsClient.removeListener('message', handleMessage);
     };
   }, []);
 
@@ -103,8 +115,8 @@ const Chat = () => {
       message,
     };
 
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(JSON.stringify(newMessage));
+    if (wsClient.readyState && wsClient.readyState() === WebSocket.OPEN) {
+      wsClient.send(JSON.stringify(newMessage));
       setMessage('');
     } else {
       console.error('WebSocket connection is not open');
@@ -137,7 +149,11 @@ const Chat = () => {
 
   const subscribeChannel = (channel_key) => {
     console.log(channel_key)
-    webSocket.send(JSON.stringify(subscribePublicChannel(channel_key)));
+    if (wsClient.readyState && wsClient.readyState() === WebSocket.OPEN) {
+      wsClient.send(JSON.stringify(subscribePublicChannel(channel_key)));
+    } else {
+      console.error('WebSocket not open yet');
+    }
 
     alert(`You selected the ${channel_key} channel!`);
   };
