@@ -28,6 +28,133 @@
   color: #61dafb;
 }
 
+.chat-overview {
+  min-height: 100vh;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+  background: #f5f7fb;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 760px;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e4e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(18, 38, 63, 0.08);
+  overflow: hidden;
+}
+
+.chat-container h2 {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.messages {
+  flex: 1;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  max-height: 56vh;
+  text-align: left;
+}
+
+.message {
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #f8faff;
+  border: 1px solid #edf2fb;
+}
+
+.username {
+  font-weight: 600;
+}
+
+.timestamp {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7382;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #eef1f6;
+}
+
+.chat-form input {
+  flex: 1;
+  height: 40px;
+  border: 1px solid #ccd3e0;
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.chat-form button {
+  height: 40px;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #2f6df6;
+  color: #fff;
+  cursor: pointer;
+}
+
+.chat-form button:hover {
+  background: #2459cb;
+}
+
+.channel-finder {
+  width: 240px;
+  background: #fff;
+  border: 1px solid #e4e8f0;
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 8px 24px rgba(18, 38, 63, 0.06);
+}
+
+.dropdown-button,
+.channel-button {
+  border: 1px solid #ccd3e0;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.dropdown-button {
+  width: 100%;
+  height: 38px;
+}
+
+.dropdown-menu {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+
+.channel-button {
+  height: 30px;
+  padding: 0 0.6rem;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
