@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { webSocketUrl } from './ApiClient';
 import wsClient from './wsClient';
+import './styles/chat.css';
+
 
 const Chat = () => {
   // State variables
