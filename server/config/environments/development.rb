@@ -74,6 +74,13 @@ Rails.application.configure do
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
 
+  # Allowed hosts (LAN + localhost)
+  config.hosts << /\A(?:localhost|127\.0\.0\.1)\z/
+  config.hosts << /\A(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})\z/
+
   # Action Cable
-  config.action_cable.allowed_request_origins = ['http://localhost:3000']
+  config.action_cable.allowed_request_origins = [
+    /\Ahttp:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\z/,
+    /\Ahttps?:\/\/(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?::\d+)?\z/
+  ]
 end
