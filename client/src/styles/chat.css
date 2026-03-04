@@ -58,6 +58,39 @@
   border-bottom: 1px solid #eef1f6;
 }
 
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #eef1f6;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: #fbfcff;
+}
+
+.tab-button {
+  border: 1px solid #ccd3e0;
+  background: #ffffff;
+  color: #1f2633;
+  border-radius: 999px;
+  height: 34px;
+  padding: 0 0.85rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab-button:hover {
+  background: #f3f6fd;
+  border-color: #b7c3dc;
+}
+
+.tab-button.active {
+  background: #2f6df6;
+  border-color: #2f6df6;
+  color: #ffffff;
+}
+
 .messages {
   flex: 1;
   padding: 1rem 1.25rem;
@@ -148,6 +181,12 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.4rem 0;
+}
+
+.dropdown-item label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .channel-button {
