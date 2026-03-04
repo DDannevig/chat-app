@@ -5,20 +5,12 @@ import './styles/chat.css';
 
 
 const Chat = () => {
-  // State variables
-  const [publicMessages, setPublicMessages] = useState([]); // Array to store messages
-  const [privateMessages, setPrivateMessages] = useState([]); // Array to store messages
-  const [message, setMessage] = useState(''); // Current message input value
-  const [username, setUsername] = useState(''); // Username
-  const [isConnected, setIsConnected] = useState(false); // Connection status
-  const [isPublicChannelsOpen, setPublicChannelsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   const [publicChannels, setPublicChannels] = useState([]);
+  const [subscribedChannels, setSubscribedChannels] = useState([]);
+  const [messagesByChannel, setMessagesByChannel] = useState({});
   const [currentChannel, setCurrentChannel] = useState('');
-  
-
-  const togglePublicChannelsDropdown = () => {
-    setPublicChannelsOpen(!isPublicChannelsOpen);
-  };
 
   useEffect(() => {
     console.log('Starting connection');
@@ -56,33 +48,47 @@ const Chat = () => {
           break;
         case 'welcome':
           break;
-        case 'confirm_subscription':
-          const channelKey = JSON.parse(incomingMessage['identifier'])['channel_name']
-          console.log("Current Channel: ", channelKey)
-          setCurrentChannel(channelKey);
+        case 'confirm_subscription': {
+          const identifier = JSON.parse(incomingMessage['identifier'] || '{}');
+          if (identifier['channel'] === 'PublicChannel') {
+            const channelKey = identifier['channel_name'];
+            setSubscribedChannels((prev) => (prev.includes(channelKey) ? prev : [...prev, channelKey]));
+            setMessagesByChannel((prev) => (prev[channelKey] ? prev : { ...prev, [channelKey]: [] }));
+            setCurrentChannel((prev) => prev || channelKey);
+          }
           break;
-        case 'public_channels':
-          setPublicChannels(incomingMessage['public_channels'] || []);
+        }
+        case 'public_channels': {
+          const channels = incomingMessage['public_channels'] || [];
+          setPublicChannels(channels);
+          setMessagesByChannel((prev) => {
+            const next = { ...prev };
+            channels.forEach((channel) => {
+              if (!next[channel.key]) {
+                next[channel.key] = [];
+              }
+            });
+            return next;
+          });
           break;
+        }
         default:
-          const identifier = JSON.parse(incomingMessage['identifier'])
-          console.log("DEFAULT")
-          console.log("incomingMessage: ", incomingMessage['message'])
+          const identifier = JSON.parse(incomingMessage['identifier'] || '{}');
           switch(identifier['channel']){
             case 'PrivateChannel':
-              console.log("PrivateChannelPrivateChannelPrivateChannel")
-              console.log("Code how to recieve private messages please")
               break;
-            case 'PublicChannel':
-              console.log("Got here")
-              console.log("message: ", incomingMessage['message'])
-              switch(incomingMessage['message']['type']) {
-                case 'welcome':
-                  break;
-                case 'message':
-                  setPublicMessages((publicMessages) => [...publicMessages, incomingMessage['message']]);
-                  break;
+            case 'PublicChannel': {
+              const messagePayload = incomingMessage['message'] || {};
+              if (messagePayload['type'] === 'message') {
+                const channelKey = identifier['channel_name'];
+                setMessagesByChannel((prev) => {
+                  const next = { ...prev };
+                  next[channelKey] = [...(next[channelKey] || []), messagePayload];
+                  return next;
+                });
               }
+              break;
+            }
           }
           break;
       }
@@ -109,6 +115,10 @@ const Chat = () => {
 
     if (!message) {
       return; // Don't send empty messages
+    }
+
+    if (!currentChannel) {
+      return;
     }
 
     const newMessage = {
@@ -149,49 +159,77 @@ const Chat = () => {
     return { action: 'retrieve_public_channels' };
   };
 
-  const subscribeChannel = (channel_key) => {
-    console.log(channel_key)
+  const subscribeChannel = (channelKey) => {
     if (wsClient.readyState && wsClient.readyState() === WebSocket.OPEN) {
-      wsClient.send(JSON.stringify(subscribePublicChannel(channel_key)));
+      wsClient.send(JSON.stringify(subscribePublicChannel(channelKey)));
     } else {
       console.error('WebSocket not open yet');
     }
 
-    alert(`You selected the ${channel_key} channel!`);
+    setSubscribedChannels((prev) => (prev.includes(channelKey) ? prev : [...prev, channelKey]));
+    setMessagesByChannel((prev) => (prev[channelKey] ? prev : { ...prev, [channelKey]: [] }));
+    setCurrentChannel((prev) => prev || channelKey);
+  };
+
+  const handleChannelCheckboxChange = (channelKey, checked) => {
+    if (checked) {
+      subscribeChannel(channelKey);
+      setCurrentChannel(channelKey);
+      return;
+    }
+
+    setSubscribedChannels((prev) => {
+      const next = prev.filter((key) => key !== channelKey);
+      setCurrentChannel((current) => {
+        if (current !== channelKey) {
+          return current;
+        }
+        return next[0] || '';
+      });
+      return next;
+    });
   };
 
 
   return (
     <div className="chat-overview"> 
       <div className="channel-finder">
-        <button onClick={togglePublicChannelsDropdown} className="dropdown-button">
-          Select Option
-        </button>
-        {isPublicChannelsOpen && (
-          <ul className="dropdown-menu">
-            {publicChannels.map((channel) => (
+        <ul className="dropdown-menu">
+          {publicChannels.map((channel) => (
             <li key={channel.key} className="dropdown-item">
-              <span>{channel.key}</span>
-              <button
-                className="channel-button"
-                onClick={() => subscribeChannel(channel.key)}
-              >
-                Join
-              </button>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={subscribedChannels.includes(channel.key)}
+                  onChange={(e) => handleChannelCheckboxChange(channel.key, e.target.checked)}
+                />
+                {channel.key}
+              </label>
             </li>
           ))}
-          </ul>
-        )}
+        </ul>
       </div>
       <div className="chat-container">
         <h2>Chat</h2>
         {!isConnected && <p>Connecting to server...</p>}
 
+        <div className="tabs">
+          {subscribedChannels.map((channelKey) => (
+            <button
+              key={channelKey}
+              className={`tab-button ${currentChannel === channelKey ? 'active' : ''}`}
+              onClick={() => setCurrentChannel(channelKey)}
+            >
+              {channelKey}
+            </button>
+          ))}
+        </div>
+
         <div className="messages">
-          {publicMessages.map((msg, index) => (
+          {(messagesByChannel[currentChannel] || []).map((msg, index) => (
             <div key={index} className="message">
               <span className="username">{msg['user']}</span>: <span className="content">{msg['message']}</span>
-              <span className="timestamp">{new Date(msg['created_at']).toLocaleTimeString()}</span>
+              <span className="timestamp">{msg['created_at'] ? new Date(msg['created_at']).toLocaleTimeString() : ''}</span>
             </div>
           ))}
         </div>
