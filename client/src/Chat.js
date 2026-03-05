@@ -190,6 +190,13 @@ const Chat = () => {
     });
   };
 
+  const handleDisconnect = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    try { wsClient.close(); } catch (e) {}
+    window.location.href = '/login';
+  };
+
 
   return (
     <div className="chat-overview"> 
@@ -210,7 +217,12 @@ const Chat = () => {
         </ul>
       </div>
       <div className="chat-container">
-        <h2>Chat</h2>
+        <div className="chat-header">
+          <h2>Chat</h2>
+          <button className="disconnect-button" onClick={handleDisconnect}>
+            Disconnect
+          </button>
+        </div>
         {!isConnected && <p>Connecting to server...</p>}
 
         <div className="tabs">
