@@ -6,7 +6,6 @@ const listeners = {
 };
 
 let ws = null;
-let url = null;
 
 function _forward(eventName, ev) {
   const set = listeners[eventName];
@@ -25,7 +24,6 @@ function _attach() {
 }
 
 export function init(connectUrl) {
-  url = connectUrl;
   if (ws && ws.readyState !== WebSocket.CLOSED) return ws;
   ws = new WebSocket(connectUrl);
   _attach();
