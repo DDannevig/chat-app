@@ -5,7 +5,7 @@ class PublicChannel < ActionCable::Channel::Base
     stream_from "public_channel_#{params[:channel_name]}"
     add_active_user_to_channel
 
-    last_messages = channel.messages.order(created_at: :asc).limit(5)
+    last_messages = channel.messages.order(created_at: :desc).limit(5).reverse
     serialized_messages = ActiveModelSerializers::SerializableResource.new(
                           last_messages, each_serializer: MessageSerializer)
 
