@@ -91,9 +91,7 @@ const Chat = () => {
                 });
                 break;
               }
-
-              // Informational welcome messages
-              if (messagePayload['type'] === 'welcome') {
+              if (messagePayload['type'] === 'welcome' || messagePayload['type'] === 'goodbye') {
                 setMessagesByChannel((prev) => {
                   const next = { ...prev };
                   next[channelKey] = [...(next[channelKey] || []), { ...messagePayload, _info: true }];
@@ -178,6 +176,16 @@ const Chat = () => {
     };
   };
 
+  const unsubscribePublicChannel = (channel_key) => {
+    return {
+      command: 'unsubscribe',
+      identifier: JSON.stringify({
+        channel: 'PublicChannel',
+        channel_name: channel_key
+      })
+    };
+  };
+
   const retrievePublicChannels = () => {
     return { action: 'retrieve_public_channels' };
   };
@@ -194,12 +202,27 @@ const Chat = () => {
     setCurrentChannel((prev) => prev || channelKey);
   };
 
+  const unsubscribeChannel = (channelKey) => {
+    if (wsClient.readyState && wsClient.readyState() === WebSocket.OPEN) {
+      try {
+        wsClient.send(JSON.stringify(unsubscribePublicChannel(channelKey)));
+      } catch (e) {
+        console.error('Failed to send unsubscribe for', channelKey, e);
+      }
+    } else {
+      console.error('WebSocket not open yet');
+    }
+  };
+
   const handleChannelCheckboxChange = (channelKey, checked) => {
     if (checked) {
       subscribeChannel(channelKey);
       setCurrentChannel(channelKey);
       return;
     }
+
+    // send unsubscribe request to server
+    unsubscribeChannel(channelKey);
 
     setSubscribedChannels((prev) => {
       const next = prev.filter((key) => key !== channelKey);
@@ -265,8 +288,6 @@ const Chat = () => {
             const nickname = localStorage.getItem('nickname') || '';
             const isInfo = msg._info || msg.type === 'welcome';
             const isPrior = !!msg._prior;
-            // Messages from the current user have `user` equal to stored nickname
-            // If nickname is not available, treat messages sent by current session as mine
             const isMine = !isInfo && msg['user'] && (
               (nickname && msg['user'] === nickname) || (!nickname && msg._local === true)
             );
