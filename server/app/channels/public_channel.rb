@@ -15,6 +15,7 @@ class PublicChannel < ActionCable::Channel::Base
 
   def unsubscribed
     remove_active_user_from_channel
+    broadcast_user_left
   end
 
   private
@@ -39,6 +40,11 @@ class PublicChannel < ActionCable::Channel::Base
 
   def broadcast_new_user
     message = { type: 'welcome', message: "Welcome, #{current_user.nickname}!" }
+    ActionCable.server.broadcast("public_channel_#{channel.key}", message)
+  end
+
+  def broadcast_user_left
+    message = { type: 'goodbye', message: "#{current_user.nickname} has left the channel." }
     ActionCable.server.broadcast("public_channel_#{channel.key}", message)
   end
 end
