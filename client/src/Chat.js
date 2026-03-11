@@ -79,8 +79,31 @@ const Chat = () => {
               break;
             case 'PublicChannel': {
               const messagePayload = incomingMessage['message'] || {};
+              const channelKey = identifier['channel_name'];
+
+              // Handle last messages (sent upon subscribing) - mark as prior
+              if (messagePayload['last_messages']) {
+                const last = messagePayload['last_messages'].map((m) => ({ ...m, _prior: true }));
+                setMessagesByChannel((prev) => {
+                  const next = { ...prev };
+                  next[channelKey] = [...(last || []), ...(next[channelKey] || [])];
+                  return next;
+                });
+                break;
+              }
+
+              // Informational welcome messages
+              if (messagePayload['type'] === 'welcome') {
+                setMessagesByChannel((prev) => {
+                  const next = { ...prev };
+                  next[channelKey] = [...(next[channelKey] || []), { ...messagePayload, _info: true }];
+                  return next;
+                });
+                break;
+              }
+
+              // Regular chat message
               if (messagePayload['type'] === 'message') {
-                const channelKey = identifier['channel_name'];
                 setMessagesByChannel((prev) => {
                   const next = { ...prev };
                   next[channelKey] = [...(next[channelKey] || []), messagePayload];
@@ -238,12 +261,30 @@ const Chat = () => {
         </div>
 
         <div className="messages">
-          {(messagesByChannel[currentChannel] || []).map((msg, index) => (
-            <div key={index} className="message">
-              <span className="username">{msg['user']}</span>: <span className="content">{msg['message']}</span>
-              <span className="timestamp">{msg['created_at'] ? new Date(msg['created_at']).toLocaleTimeString() : ''}</span>
-            </div>
-          ))}
+          {(messagesByChannel[currentChannel] || []).map((msg, index) => {
+            const nickname = localStorage.getItem('nickname') || '';
+            const isInfo = msg._info || msg.type === 'welcome';
+            const isPrior = !!msg._prior;
+            // Messages from the current user have `user` equal to stored nickname
+            // If nickname is not available, treat messages sent by current session as mine
+            const isMine = !isInfo && msg['user'] && (
+              (nickname && msg['user'] === nickname) || (!nickname && msg._local === true)
+            );
+            const cls = `message ${isInfo ? 'info' : isMine ? 'mine' : 'other'}${isPrior ? ' prior' : ''}`;
+
+            return (
+              <div key={index} className={cls}>
+                {isInfo ? (
+                  <div className="info-content">{msg['message']}</div>
+                ) : (
+                  <>
+                    <span className="username">{msg['user']}</span>: <span className="content">{msg['message']}</span>
+                    <span className="timestamp">{msg['created_at'] ? new Date(msg['created_at']).toLocaleTimeString() : ''}</span>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <form onSubmit={sendMessage} className="chat-form">
