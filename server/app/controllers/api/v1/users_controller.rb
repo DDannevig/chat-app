@@ -15,6 +15,7 @@ module Api
 
       # POST api/v1/user/:user_id/validation
       def validation
+        # To-Do: This should fire an email that sends an email to validate said user
         user.confirm
         render json: user, serializer: UserSerializer
       end
@@ -53,7 +54,8 @@ module Api
       def sessions_response
         { token: JWT.encode(token_payload, Rails.application.secrets.secret_key_base),
           expiration: token_payload[:expiration],
-          user_id: user_by_email.id }
+          user_id: user_by_email.id,
+          nickname: user_by_email.nickname }
       end
     end
   end

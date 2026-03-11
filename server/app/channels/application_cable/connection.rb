@@ -69,7 +69,8 @@ module ApplicationCable
       return transmit({ error: "Invalid key: #{key}" }) if channel.blank?
       return transmit({ error: "Unsubscribed user" }) unless subscribed_user?(key)
 
-      Chat::Message.create(channel: channel, message: message, user: current_user)
+      message = Chat::Message.create(channel: channel, message: message, user: current_user)
+      transmit(MessageSerializer.new(message).as_json)
     end
 
     def send_private_message(user_id, message)

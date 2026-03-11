@@ -4,7 +4,13 @@ class PublicChannel < ActionCable::Channel::Base
 
     stream_from "public_channel_#{params[:channel_name]}"
     add_active_user_to_channel
-    transmit({ type: 'welcome', message: "Welcome, #{current_user.nickname}!" })
+
+    last_messages = channel.messages.order(created_at: :asc).limit(5)
+    serialized_messages = ActiveModelSerializers::SerializableResource.new(
+                          last_messages, each_serializer: MessageSerializer)
+
+    transmit({type: 'last_messages', last_messages: serialized_messages.as_json})
+    broadcast_new_user
   end
 
   def unsubscribed
@@ -29,5 +35,10 @@ class PublicChannel < ActionCable::Channel::Base
       "active_on_channel_#{params[:channel_name]}",
       current_user.id, current_user.nickname
     )
+  end
+
+  def broadcast_new_user
+    message = { type: 'welcome', message: "Welcome, #{current_user.nickname}!" }
+    ActionCable.server.broadcast("public_channel_#{channel.key}", message)
   end
 end

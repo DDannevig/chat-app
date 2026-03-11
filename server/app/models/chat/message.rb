@@ -20,7 +20,7 @@ module Chat
     end
 
     def action_cable_message
-      { user: user.nickname, message: message, created_at: created_at, type: 'message' }
-    end 
+      MessageSerializer.new(self).as_json
+    end
   end
 end
